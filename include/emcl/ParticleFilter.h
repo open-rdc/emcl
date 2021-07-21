@@ -29,7 +29,8 @@ public:
 			const std::shared_ptr<OdomModel> &odom_model,
 			const std::shared_ptr<LikelihoodFieldMap> &map,
 			double alpha_th, double open_space_th,
-			double expansion_radius_position, double expansion_radius_orientation);
+			double expansion_radius_position, double expansion_radius_orientation,
+			bool invert_lidar);
 	~ParticleFilter();
 
 	std::vector<Particle> particles_;
@@ -68,6 +69,8 @@ private:
 	double open_space_threshold_;
 	double expansion_radius_position_;
 	double expansion_radius_orientation_;
+
+	bool invert_lidar_;
 
 	void expansionReset(void);
 };

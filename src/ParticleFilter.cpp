@@ -18,10 +18,12 @@ ParticleFilter::ParticleFilter(const Pose &p, int num, const Scan &scan,
 				const std::shared_ptr<OdomModel> &odom_model,
 				const std::shared_ptr<LikelihoodFieldMap> &map,
 				double alpha_th, double open_space_th,
-				double expansion_radius_position, double expansion_radius_orientation)
+				double expansion_radius_position, double expansion_radius_orientation,
+				bool invert_lidar)
 	: last_odom_(NULL), prev_odom_(NULL), alpha_threshold_(alpha_th), open_space_threshold_(open_space_th),
 	  expansion_radius_position_(expansion_radius_position),
-	  expansion_radius_orientation_(expansion_radius_orientation)
+	  expansion_radius_orientation_(expansion_radius_orientation),
+	  invert_lidar_(invert_lidar)
 {
 	odom_model_ = move(odom_model);
 	map_ = move(map);
@@ -216,9 +218,16 @@ void ParticleFilter::setScan(const sensor_msgs::LaserScan::ConstPtr &msg)
 		scan_.ranges_.resize(msg->ranges.size());
 
 	scan_.seq_ = msg->header.seq;
-	for(int i=0; i<msg->ranges.size(); i++)
-		scan_.ranges_[i] = msg->ranges[i];
 
+	if(invert_lidar_){
+		for(int i=msg->ranges.size()-1; i>0; i--)
+			scan_.ranges_[i] = msg->ranges[(msg->ranges.size()-1)-i];
+	}
+	else{
+		for(int i=0; i<msg->ranges.size(); i++)
+			scan_.ranges_[i] = msg->ranges[i];
+	}
+	
 	scan_.angle_min_ = msg->angle_min;
 	scan_.angle_max_ = msg->angle_max;
 	scan_.angle_increment_ = msg->angle_increment;

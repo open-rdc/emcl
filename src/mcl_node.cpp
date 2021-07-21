@@ -76,8 +76,11 @@ void MclNode::initPF(void)
 	private_nh_.param("expansion_radius_position", ex_rad_pos, 0.1);
 	private_nh_.param("expansion_radius_orientation", ex_rad_ori, 0.2);
 
+	bool invert_lidar;
+	private_nh_.param("invert_lidar", invert_lidar, false);
+
 	pf_.reset(new ParticleFilter(init_pose, num_particles, scan, om, map,
-				alpha_th, open_space_th, ex_rad_pos, ex_rad_ori));
+				alpha_th, open_space_th, ex_rad_pos, ex_rad_ori, invert_lidar));
 }
 
 std::shared_ptr<OdomModel> MclNode::initOdometry(void)
