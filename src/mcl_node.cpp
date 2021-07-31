@@ -38,6 +38,7 @@ void MclNode::initCommunication(void)
 	alpha_pub_ = nh_.advertise<std_msgs::Float32>("alpha", 2, true);
 	laser_scan_sub_ = nh_.subscribe("scan", 2, &MclNode::cbScan, this);
 	initial_pose_sub_ = nh_.subscribe("initialpose", 2, &MclNode::initialPoseReceived, this);
+	gnss_sub_ =nh_.subscribe("gps/position", 2, &MclNode::gnssPoseReceived, this);
 
 	global_loc_srv_ = nh_.advertiseService("global_localization", &MclNode::cbSimpleReset, this);
 
@@ -77,10 +78,13 @@ void MclNode::initPF(void)
 	private_nh_.param("expansion_radius_orientation", ex_rad_ori, 0.2);
 
 	bool invert_lidar;
+	double dev_threshold, kld_threshold;
 	private_nh_.param("invert_lidar", invert_lidar, false);
+	private_nh_.param("dev_threshold",dev_threshold,5.0);
+	private_nh_.param("kld_threshold",kld_threshold,10.0);
 
 	pf_.reset(new ParticleFilter(init_pose, num_particles, scan, om, map,
-				alpha_th, open_space_th, ex_rad_pos, ex_rad_ori, invert_lidar));
+				alpha_th, open_space_th, ex_rad_pos, ex_rad_ori, invert_lidar, dev_threshold, kld_threshold));
 }
 
 std::shared_ptr<OdomModel> MclNode::initOdometry(void)
@@ -126,6 +130,15 @@ void MclNode::initialPoseReceived(const geometry_msgs::PoseWithCovarianceStamped
 	init_t_ = tf2::getYaw(msg->pose.pose.orientation);
 }
 
+void MclNode::gnssPoseReceived(const geometry_msgs::PoseWithCovarianceStampedConstPtr & msg)
+{
+	gnss_x_ = msg->pose.pose.position.x;
+	gnss_y_ = msg->pose.pose.position.y;
+
+	gnss_var_x_ = msg->pose.covariance[0];
+	gnss_var_y_ = msg->pose.covariance[7];
+}
+
 void MclNode::loop(void)
 {
 	if(init_request_){
@@ -154,7 +167,9 @@ void MclNode::loop(void)
 	struct timespec ts_start, ts_end;
 	clock_gettime(CLOCK_REALTIME, &ts_start);
 	*/
-	pf_->sensorUpdate(lx, ly, lt);
+	double x_var, y_var, t_var;
+	pf_->getVariance(x, y, t, x_var, y_var, t_var);
+	pf_->sensorUpdate(lx, ly, lt, x_var, y_var, t_var, gnss_x_, gnss_y_, gnss_var_x_, gnss_var_y_);
 	/*
 	clock_gettime(CLOCK_REALTIME, &ts_end);
 	struct tm tm;
@@ -164,7 +179,7 @@ void MclNode::loop(void)
 	printf("END: %02d.%09ld\n", tm.tm_sec, ts_end.tv_nsec);
 	*/
 
-	double x_var, y_var, t_var, xy_cov, yt_cov, tx_cov;
+	double xy_cov, yt_cov, tx_cov;
 	pf_->meanPose(x, y, t, x_var, y_var, t_var, xy_cov, yt_cov, tx_cov);
 
 	publishOdomFrame(x, y, t);

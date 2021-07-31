@@ -10,6 +10,8 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
 )
 
+find_package(Eigen3 REQUIRED)
+
 
 catkin_package(
 #  INCLUDE_DIRS include
@@ -19,6 +21,7 @@ catkin_package(
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS} )
+include_directories(${EIGEN3_INCLUDE_DIRS})
 
 add_library(ParticleFilter src/ParticleFilter.cpp)
 add_library(Particle src/Particle.cpp)

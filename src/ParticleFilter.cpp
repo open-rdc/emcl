@@ -12,6 +12,10 @@
 #include <stdlib.h>
 #include <cmath>
 
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include <Eigen/LU>
+
 namespace emcl {
 
 ParticleFilter::ParticleFilter(const Pose &p, int num, const Scan &scan,
@@ -19,11 +23,13 @@ ParticleFilter::ParticleFilter(const Pose &p, int num, const Scan &scan,
 				const std::shared_ptr<LikelihoodFieldMap> &map,
 				double alpha_th, double open_space_th,
 				double expansion_radius_position, double expansion_radius_orientation,
-				bool invert_lidar)
+				bool invert_lidar,
+				double dev_threshold, double kld_threshold)
 	: last_odom_(NULL), prev_odom_(NULL), alpha_threshold_(alpha_th), open_space_threshold_(open_space_th),
 	  expansion_radius_position_(expansion_radius_position),
 	  expansion_radius_orientation_(expansion_radius_orientation),
-	  invert_lidar_(invert_lidar)
+	  invert_lidar_(invert_lidar),
+	  dev_threshold_(dev_threshold), kld_threshold_(kld_threshold)
 {
 	odom_model_ = move(odom_model);
 	map_ = move(map);
@@ -82,7 +88,10 @@ void ParticleFilter::resampling(void)
 		particles_[i] = old[chosen[i]];
 }
 
-void ParticleFilter::sensorUpdate(double lidar_x, double lidar_y, double lidar_t)
+void ParticleFilter::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
+								  double x_var, double y_var, double t_var,
+								  double gnss_x, double gnss_y, 
+								  double gnss_var_x, double gnss_var_y)
 {
 	if(processed_seq_ == scan_.seq_)
 		return;
@@ -113,9 +122,16 @@ void ParticleFilter::sensorUpdate(double lidar_x, double lidar_y, double lidar_t
 		p.w_ *= p.likelihood(map_.get(), scan);
 
 	alpha_ = normalize()/valid_beams;
-	if(alpha_ < alpha_threshold_ and valid_pct > open_space_threshold_){
+	double kld = getKLDivergence(lidar_x, lidar_y, x_var, y_var, gnss_x, gnss_y, gnss_var_x, gnss_var_y);
+	if(alpha_ < alpha_threshold_ and valid_pct > open_space_threshold_ and (sqrt(x_var) + sqrt(y_var)) < dev_threshold_){
 		ROS_INFO("RESET");
 		expansionReset();
+		for(auto &p : particles_)
+			p.w_ *= p.likelihood(map_.get(), scan);
+	}
+	else if(kld < kld_threshold_) {
+		ROS_INFO("GNSS RESET");
+		gnssReset(gnss_x, gnss_y, gnss_var_x, gnss_var_y);
 		for(auto &p : particles_)
 			p.w_ *= p.likelihood(map_.get(), scan);
 	}
@@ -278,6 +294,28 @@ void ParticleFilter::expansionReset(void)
 	}
 }
 
+void ParticleFilter::gnssReset(double gnss_x, double gnss_y, double gnss_var_x, double gnss_var_y)
+{
+	double beta = alpha_ / alpha_threshold_;
+
+	for(int i=0; i< particles_.size(); i++)
+	{
+		particles_[i].p_.x_ = gnss_x + 2*((double)rand()/RAND_MAX - 0.5)*gnss_var_x;
+		particles_[i].p_.y_ = gnss_y + 2*((double)rand()/RAND_MAX - 0.5)*gnss_var_y;
+		particles_[i].p_.t_  = 2*((double)rand()/RAND_MAX - 0.5)*M_PI;
+		particles_[i].w_ = 1.0 / particles_.size();
+	}
+	/*
+	for(int i=0; i< static_cast<int>(particles_.size() * (1-beta)); i++)
+	{
+		particles_[i].p_.x_ = gnss_x + 2*((double)rand()/RAND_MAX - 0.5)*gnss_var_x;
+		particles_[i].p_.y_ = gnss_y + 2*((double)rand()/RAND_MAX - 0.5)*gnss_var_y;
+		particles_[i].p_.t_  = 2*((double)rand()/RAND_MAX - 0.5)*M_PI;
+		particles_[i].w_ = 1.0 / static_cast<int>(particles_.size() * beta);
+	}
+	*/
+}
+
 void ParticleFilter::simpleReset(void)
 {
 	std::vector<Pose> poses;
@@ -289,4 +327,68 @@ void ParticleFilter::simpleReset(void)
 	}
 }
 
+void ParticleFilter::getVariance(double x_mean, double y_mean, double t_mean,
+					 			  double &x_var, double &y_var, double &t_var)
+{
+	double x, y, t, t2;
+	x = y = t = t2 = 0.0;
+	for(const auto &p : particles_){
+		x += p.p_.x_;
+		y += p.p_.y_;
+		t += p.p_.t_;
+		t2 += normalizeAngle(p.p_.t_ + M_PI);
+	}
+
+	x_mean = x / particles_.size();
+	y_mean = y / particles_.size();
+	t_mean = t / particles_.size();
+	double t2_mean = t2 / particles_.size();
+
+	double xx, yy, tt, tt2;
+	xx = yy = tt = tt2 = 0.0;
+	for(const auto &p : particles_){
+		xx += pow(p.p_.x_ - x_mean, 2);
+		yy += pow(p.p_.y_ - y_mean, 2);
+		tt += pow(p.p_.t_ - t_mean, 2);
+		tt2 += pow(normalizeAngle(p.p_.t_ + M_PI) - t2_mean, 2);
+	}
+
+	if(tt > tt2){
+		tt = tt2;
+		t_mean = normalizeAngle(t2_mean - M_PI);
+	}
+
+	x_var = xx/(particles_.size() - 1);
+	y_var = yy/(particles_.size() - 1);
+	t_var = tt/(particles_.size() - 1);
+
+}
+
+double ParticleFilter::getKLDivergence(double x, double y, double x_var, double y_var, 
+						 			   double gnss_x, double gnss_y, double gnss_var_x, double gnss_var_y)
+{	
+	Eigen::Vector2d pf_position;
+	Eigen::Matrix2d pf_var;
+
+	Eigen::Vector2d gnss_position;
+	Eigen::Matrix2d	gnss_var;    
+    
+    pf_position << x,
+                   y;
+
+    pf_var << x_var,                0,                 
+              0,                y_var;
+
+    gnss_position << gnss_x,
+                     gnss_y;
+
+    gnss_var << gnss_var_x,                0,                 
+                0,                gnss_var_y;
+
+    int d = 2;
+
+    double kl_divergence =  ( std::log(gnss_var.determinant()/pf_var.determinant()) + (gnss_var.inverse() * pf_var).trace() + (gnss_position - pf_position).transpose() * gnss_var.inverse() * (gnss_position - pf_position) -d )/2;
+
+	return kl_divergence;
+}
 }
