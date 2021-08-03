@@ -1,6 +1,6 @@
 <launch>
   <!-- Arguments -->
-  <arg name="scan_topic"     default="scan"/>
+  <arg name="scan_topic"     default="hokuyo_scan"/>
   <arg name="initial_pose_x" default="-2.0"/>
   <arg name="initial_pose_y" default="-0.5"/>
   <arg name="initial_pose_a" default="0.0"/>
@@ -12,9 +12,9 @@
     <param name="num_particles"             value="500"/>
 
     <param name="odom_frame_id"             value="odom"/>
-    <param name="footprint_frame_id"        value="base_footprint"/>
+    <param name="footprint_frame_id"        value="base_link"/>
     <param name="base_frame_id"             value="base_link"/>
-    <param name="scan_frame_id"             value="base_scan"/>
+    <param name="scan_frame_id"             value="hokuyo_link"/>
 
     <param name="initial_pose_x"            value="$(arg initial_pose_x)"/>
     <param name="initial_pose_y"            value="$(arg initial_pose_y)"/>
@@ -27,7 +27,7 @@
 
     <param name="laser_likelihood_max_dist" value="0.2"/>
 
-    <param name="alpha_threshold" value="0.6"/>
+    <param name="alpha_threshold" value="0.2"/>
     <param name="open_space_threshold" value="0.05"/>
 
     <param name="expansion_radius_position" value="0.1"/>
@@ -39,7 +39,10 @@
 
     <param name="scan_increment"           value="1"/>
 
-    <param name="invert_lidar"             value="true"/>
+    <param name="invert_lidar"             value="false"/>
+
+    <param name="dev_threshold"             value="2.0"/>
+    <param name="kld_threshold"             value="20.0"/>
 
 <!--
     <param name="transform_tolerance"       value="0.5"/>

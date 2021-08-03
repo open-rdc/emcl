@@ -89,9 +89,8 @@ void ParticleFilter::resampling(void)
 }
 
 void ParticleFilter::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, 
-								  double x_var, double y_var, double t_var,
-								  double gnss_x, double gnss_y, 
-								  double gnss_var_x, double gnss_var_y)
+								  double gnss_x, double gnss_y, double gnss_var_x, double gnss_var_y,
+								  double dev, double kld)
 {
 	if(processed_seq_ == scan_.seq_)
 		return;
@@ -122,18 +121,20 @@ void ParticleFilter::sensorUpdate(double lidar_x, double lidar_y, double lidar_t
 		p.w_ *= p.likelihood(map_.get(), scan);
 
 	alpha_ = normalize()/valid_beams;
-	double kld = getKLDivergence(lidar_x, lidar_y, x_var, y_var, gnss_x, gnss_y, gnss_var_x, gnss_var_y);
-	if(alpha_ < alpha_threshold_ and valid_pct > open_space_threshold_ and (sqrt(x_var) + sqrt(y_var)) < dev_threshold_){
-		ROS_INFO("RESET");
-		expansionReset();
-		for(auto &p : particles_)
-			p.w_ *= p.likelihood(map_.get(), scan);
-	}
-	else if(kld < kld_threshold_) {
-		ROS_INFO("GNSS RESET");
-		gnssReset(gnss_x, gnss_y, gnss_var_x, gnss_var_y);
-		for(auto &p : particles_)
-			p.w_ *= p.likelihood(map_.get(), scan);
+
+	if(alpha_ < alpha_threshold_ and valid_pct > open_space_threshold_){
+		if(dev < dev_threshold_){
+			ROS_INFO("RESET");
+			expansionReset();
+			for(auto &p : particles_)
+				p.w_ *= p.likelihood(map_.get(), scan);
+		}
+		else if(kld > kld_threshold_){
+			ROS_INFO("GNSS RESET");
+			gnssReset(gnss_x, gnss_y, gnss_var_x, gnss_var_y);
+			for(auto &p : particles_)
+				p.w_ *= p.likelihood(map_.get(), scan);
+		}
 	}
 
 	if(normalize() > 0.000001)
@@ -298,22 +299,15 @@ void ParticleFilter::gnssReset(double gnss_x, double gnss_y, double gnss_var_x, 
 {
 	double beta = alpha_ / alpha_threshold_;
 
-	for(int i=0; i< particles_.size(); i++)
+	
+	for(int i=0; i< static_cast<int>(particles_.size() * (1-beta)); i++)
 	{
 		particles_[i].p_.x_ = gnss_x + 2*((double)rand()/RAND_MAX - 0.5)*gnss_var_x;
 		particles_[i].p_.y_ = gnss_y + 2*((double)rand()/RAND_MAX - 0.5)*gnss_var_y;
 		particles_[i].p_.t_  = 2*((double)rand()/RAND_MAX - 0.5)*M_PI;
 		particles_[i].w_ = 1.0 / particles_.size();
 	}
-	/*
-	for(int i=0; i< static_cast<int>(particles_.size() * (1-beta)); i++)
-	{
-		particles_[i].p_.x_ = gnss_x + 2*((double)rand()/RAND_MAX - 0.5)*gnss_var_x;
-		particles_[i].p_.y_ = gnss_y + 2*((double)rand()/RAND_MAX - 0.5)*gnss_var_y;
-		particles_[i].p_.t_  = 2*((double)rand()/RAND_MAX - 0.5)*M_PI;
-		particles_[i].w_ = 1.0 / static_cast<int>(particles_.size() * beta);
-	}
-	*/
+	
 }
 
 void ParticleFilter::simpleReset(void)
@@ -385,7 +379,7 @@ double ParticleFilter::getKLDivergence(double x, double y, double x_var, double 
     gnss_var << gnss_var_x,                0,                 
                 0,                gnss_var_y;
 
-    int d = 2;
+    int d = pf_position.size();
 
     double kl_divergence =  ( std::log(gnss_var.determinant()/pf_var.determinant()) + (gnss_var.inverse() * pf_var).trace() + (gnss_position - pf_position).transpose() * gnss_var.inverse() * (gnss_position - pf_position) -d )/2;
 

@@ -80,8 +80,8 @@ void MclNode::initPF(void)
 	bool invert_lidar;
 	double dev_threshold, kld_threshold;
 	private_nh_.param("invert_lidar", invert_lidar, false);
-	private_nh_.param("dev_threshold",dev_threshold,5.0);
-	private_nh_.param("kld_threshold",kld_threshold,10.0);
+	private_nh_.param("dev_threshold", dev_threshold, 5.0);
+	private_nh_.param("kld_threshold", kld_threshold, 10.0);
 
 	pf_.reset(new ParticleFilter(init_pose, num_particles, scan, om, map,
 				alpha_th, open_space_th, ex_rad_pos, ex_rad_ori, invert_lidar, dev_threshold, kld_threshold));
@@ -167,9 +167,14 @@ void MclNode::loop(void)
 	struct timespec ts_start, ts_end;
 	clock_gettime(CLOCK_REALTIME, &ts_start);
 	*/
-	double x_var, y_var, t_var;
-	pf_->getVariance(x, y, t, x_var, y_var, t_var);
-	pf_->sensorUpdate(lx, ly, lt, x_var, y_var, t_var, gnss_x_, gnss_y_, gnss_var_x_, gnss_var_y_);
+	double x_var, y_var, t_var, xy_cov, yt_cov, tx_cov;
+	pf_->meanPose(x, y, t, x_var, y_var, t_var, xy_cov, yt_cov, tx_cov);
+	//pf_->getVariance(x, y, t, x_var, y_var, t_var);
+	
+	double dev = sqrt(x_var) + sqrt(y_var);
+	double kld = pf_->getKLDivergence(x, y, x_var, y_var, gnss_x_, gnss_y_, gnss_var_x_, gnss_var_y_);
+
+	pf_->sensorUpdate(lx, ly, lt, gnss_x_, gnss_y_, gnss_var_x_, gnss_var_y_, dev, kld);
 	/*
 	clock_gettime(CLOCK_REALTIME, &ts_end);
 	struct tm tm;
@@ -179,7 +184,7 @@ void MclNode::loop(void)
 	printf("END: %02d.%09ld\n", tm.tm_sec, ts_end.tv_nsec);
 	*/
 
-	double xy_cov, yt_cov, tx_cov;
+	//double xy_cov, yt_cov, tx_cov;
 	pf_->meanPose(x, y, t, x_var, y_var, t_var, xy_cov, yt_cov, tx_cov);
 
 	publishOdomFrame(x, y, t);
