@@ -14,6 +14,7 @@
 
 #include "sensor_msgs/LaserScan.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
+#include "nav_msgs/Odometry.h"
 #include "std_srvs/Empty.h"
 
 namespace emcl {
@@ -36,6 +37,7 @@ private:
 	ros::Publisher alpha_pub_;
 	ros::Subscriber laser_scan_sub_;
 	ros::Subscriber initial_pose_sub_;
+	ros::Subscriber tracker_sub_;
 
 	ros::ServiceServer global_loc_srv_;
 
@@ -73,6 +75,7 @@ private:
 	void cbScan(const sensor_msgs::LaserScan::ConstPtr &msg);
 	bool cbSimpleReset(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
 	void initialPoseReceived(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
+	void trackerReceived(const nav_msgs::Odometry& msg);
 };
 
 }

@@ -19,13 +19,17 @@ public:
 	~ExpResetMcl();
 
 	void sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv);
+	void setGroundTruth(double x, double y, double angle_rad);
 private:
 	double alpha_threshold_;
 	double open_space_threshold_;
 	double expansion_radius_position_;
 	double expansion_radius_orientation_;
+	double g_x, g_y, g_angle;
+	bool reset;
 
 	void expansionReset(void);
+	void sensorReset(double lx, double ly, double length, double angle_rad);
 };
 
 }
