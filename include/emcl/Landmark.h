@@ -25,7 +25,7 @@ public:
     };
     std::vector<struct detect_object> detect_objects_;
 
-    bool readMapFile(std::string filename);
+    bool readMapFile(const std::string filename);
 };
 
 }

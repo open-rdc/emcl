@@ -3,6 +3,7 @@
 struct pos { double x, y, z; };
 
 namespace YAML {
+
 template<>
 struct convert<struct pos> {
   static bool decode(const Node& node, struct pos& p) {
@@ -12,11 +13,12 @@ struct convert<struct pos> {
     return true;
   }
 };
+
 }
 
 namespace emcl {
 
-bool Landmark::readMapFile(std::string filename)
+bool Landmark::readMapFile(const std::string filename)
 {
     map_.clear();
     YAML::Node node = YAML::LoadFile(filename);

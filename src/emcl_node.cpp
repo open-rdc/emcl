@@ -106,6 +106,12 @@ std::shared_ptr<LikelihoodFieldMap> EMclNode::initMap(void)
 	return std::shared_ptr<LikelihoodFieldMap>(new LikelihoodFieldMap(resp.map, likelihood_range));
 }
 
+bool EMclNode::initLandmark(std::string filename)
+{
+	landmark_.reset(new Landmark());
+	landmark_->readMapFile(filename);
+}
+
 void EMclNode::cbScan(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
     scan_frame_id_ = msg->header.frame_id;

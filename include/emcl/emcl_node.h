@@ -6,6 +6,7 @@
 
 #include <ros/ros.h>
 #include "emcl/ExpResetMcl.h"
+#include "emcl/Landmark.h"
 
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
@@ -29,6 +30,7 @@ public:
 	int getOdomFreq(void);
 private:
 	std::shared_ptr<ExpResetMcl> pf_;
+	std::shared_ptr<emcl::Landmark> landmark_;
 	ros::NodeHandle nh_;
 	ros::NodeHandle private_nh_;
 
@@ -70,6 +72,7 @@ private:
 	void initCommunication(void);
 	void initPF(void);
 	std::shared_ptr<LikelihoodFieldMap> initMap(void);
+	bool initLandmark(std::string filename);
 	std::shared_ptr<OdomModel> initOdometry(void);
 
 	void cbScan(const sensor_msgs::LaserScan::ConstPtr &msg);
