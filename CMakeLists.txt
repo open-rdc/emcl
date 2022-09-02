@@ -8,8 +8,20 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   tf2
   tf2_ros
+  std_msgs
+  message_generation
 )
 
+add_message_files(
+  FILES
+  DetectObject.msg
+  DetectObjects.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
 
 catkin_package(
 #  INCLUDE_DIRS include
@@ -28,6 +40,7 @@ add_library(OdomModel src/OdomModel.cpp)
 add_library(Pose src/Pose.cpp)
 add_library(Scan src/Scan.cpp)
 add_library(LikelihoodFieldMap src/LikelihoodFieldMap.cpp)
+add_library(Landmark src/Landmark.cpp)
 
 add_executable(mcl_node src/mcl_node.cpp)
 add_executable(emcl_node src/emcl_node.cpp)
@@ -38,6 +51,6 @@ add_dependencies(emcl_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED
 add_dependencies(emcl2_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(mcl_node Mcl Particle Pose Scan OdomModel LikelihoodFieldMap ${catkin_LIBRARIES})
-target_link_libraries(emcl_node Mcl ExpResetMcl Particle Pose Scan OdomModel LikelihoodFieldMap ${catkin_LIBRARIES})
+target_link_libraries(emcl_node Mcl ExpResetMcl Particle Pose Scan OdomModel LikelihoodFieldMap Landmark ${catkin_LIBRARIES})
 target_link_libraries(emcl2_node Mcl ExpResetMcl2 Particle Pose Scan OdomModel LikelihoodFieldMap ${catkin_LIBRARIES})
 

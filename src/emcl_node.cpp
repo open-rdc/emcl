@@ -34,6 +34,7 @@ void EMclNode::initCommunication(void)
 	alpha_pub_ = nh_.advertise<std_msgs::Float32>("alpha", 2, true);
 	laser_scan_sub_ = nh_.subscribe("scan", 2, &EMclNode::cbScan, this);
 	initial_pose_sub_ = nh_.subscribe("initialpose", 2, &EMclNode::initialPoseReceived, this);
+	detect_objects_sub_ = nh_.subscribe("detectobjects", 2, &EMclNode::detectObjectsReceived, this);
 
 	global_loc_srv_ = nh_.advertiseService("global_localization", &EMclNode::cbSimpleReset, this);
 
@@ -117,6 +118,16 @@ void EMclNode::initialPoseReceived(const geometry_msgs::PoseWithCovarianceStampe
 	init_x_ = msg->pose.pose.position.x;
 	init_y_ = msg->pose.pose.position.y;
 	init_t_ = tf2::getYaw(msg->pose.pose.orientation);
+}
+
+void EMclNode::detectObjectsReceived(const emcl::DetectObjects& msg)
+{
+	/*
+	init_request_ = true;
+	init_x_ = msg->pose.pose.position.x;
+	init_y_ = msg->pose.pose.position.y;
+	init_t_ = tf2::getYaw(msg->pose.pose.orientation);
+	*/
 }
 
 void EMclNode::loop(void)
