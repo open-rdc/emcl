@@ -18,6 +18,8 @@ EMclNode::EMclNode() : private_nh_("~")
 	initPF();
 
 	private_nh_.param("odom_freq", odom_freq_, 20);
+	private_nh_.param("landmark_filename", landmark_filename_, std::string(""));
+	initLandmark(landmark_filename_);
 
 	init_request_ = false;
 	simple_reset_request_ = false;
@@ -126,14 +128,16 @@ void EMclNode::initialPoseReceived(const geometry_msgs::PoseWithCovarianceStampe
 	init_t_ = tf2::getYaw(msg->pose.pose.orientation);
 }
 
-void EMclNode::detectObjectsReceived(const emcl::DetectObjects& msg)
+void EMclNode::detectObjectsReceived(const emcl::DetectObjects::ConstPtr& msg)
 {
-	/*
-	init_request_ = true;
-	init_x_ = msg->pose.pose.position.x;
-	init_y_ = msg->pose.pose.position.y;
-	init_t_ = tf2::getYaw(msg->pose.pose.orientation);
-	*/
+	landmark_->detect_objects_.clear();
+	for(auto &detect_object:msg->detectobjects) {
+		Landmark::detect_object obj;
+		obj.name = detect_object.name;
+		obj.yaw = detect_object.yaw;
+		obj.distance = detect_object.distance;
+		landmark_->detect_objects_.push_back(obj);
+	}
 }
 
 void EMclNode::loop(void)

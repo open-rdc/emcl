@@ -6,6 +6,7 @@
 
 #include "emcl/Pose.h"
 #include "emcl/LikelihoodFieldMap.h"
+#include "emcl/Landmark.h"
 
 namespace emcl {
 
@@ -17,6 +18,8 @@ public:
 	Particle(double x, double y, double t, double w);
 
 	double likelihood(LikelihoodFieldMap *map, Scan &scan);
+	double likelihood(Landmark &landmark);
+	double likelihood(LikelihoodFieldMap *map, Scan &scan, Landmark &landmark);
 	bool wallConflict(LikelihoodFieldMap *map, Scan &scan, double threshold, bool replace);
 	Pose p_;
 	double w_;

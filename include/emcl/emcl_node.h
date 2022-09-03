@@ -16,6 +16,7 @@
 #include "sensor_msgs/LaserScan.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
 #include "std_srvs/Empty.h"
+#include "emcl/DetectObject.h"
 #include "emcl/DetectObjects.h"
 
 namespace emcl {
@@ -59,6 +60,7 @@ private:
 	bool init_request_;
 	bool simple_reset_request_;
 	double init_x_, init_y_, init_t_;
+	std::string landmark_filename_;
 
 	void publishPose(double x, double y, double t,
 			double x_dev, double y_dev, double t_dev,
@@ -78,7 +80,7 @@ private:
 	void cbScan(const sensor_msgs::LaserScan::ConstPtr &msg);
 	bool cbSimpleReset(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
 	void initialPoseReceived(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
-	void detectObjectsReceived(const emcl::DetectObjects& msg);
+	void detectObjectsReceived(const emcl::DetectObjects::ConstPtr& msg);
 };
 
 }

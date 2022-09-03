@@ -16,14 +16,14 @@ public:
         double x;
         double y;
     };
-    std::vector<struct object> map_;
+    std::vector<object> map_;
 
     struct detect_object {
         std::string name;
         double yaw;
         double distance;
     };
-    std::vector<struct detect_object> detect_objects_;
+    std::vector<detect_object> detect_objects_;
 
     bool readMapFile(const std::string filename);
 };
