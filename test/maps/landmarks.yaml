@@ -1,0 +1,16 @@
+#/////////////////////////////#
+#landmark:
+#  - name: landmark_name      #認識したいランドマークの名前
+#    id: 1                    #ランドマークの番号/特殊の名前
+#    pose: [x, y, z]          #ランドマークの位置
+#    enable: null             #ランドマークが使うかどうか
+#    sp: null                 #ランドマーク他の色々
+#/////////////////////////////#
+
+landmark:
+  - name: Vending machine
+    id: 0
+    pose: [4, -7, 0]
+    enable: true
+    sp: null
+
