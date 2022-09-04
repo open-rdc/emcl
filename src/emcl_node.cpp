@@ -110,8 +110,7 @@ std::shared_ptr<LikelihoodFieldMap> EMclNode::initMap(void)
 
 bool EMclNode::initLandmark(std::string filename)
 {
-	landmark_.reset(new Landmark());
-	landmark_->readMapFile(filename);
+		pf_->loadLandmark(filename);
 }
 
 void EMclNode::cbScan(const sensor_msgs::LaserScan::ConstPtr &msg)
@@ -130,14 +129,7 @@ void EMclNode::initialPoseReceived(const geometry_msgs::PoseWithCovarianceStampe
 
 void EMclNode::detectObjectsReceived(const emcl::DetectObjects::ConstPtr& msg)
 {
-	landmark_->detect_objects_.clear();
-	for(auto &detect_object:msg->detectobjects) {
-		Landmark::detect_object obj;
-		obj.name = detect_object.name;
-		obj.yaw = detect_object.yaw;
-		obj.distance = detect_object.distance;
-		landmark_->detect_objects_.push_back(obj);
-	}
+	pf_->setDetectObjects(msg);
 }
 
 void EMclNode::loop(void)

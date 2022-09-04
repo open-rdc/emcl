@@ -14,6 +14,8 @@
 
 #include "nav_msgs/OccupancyGrid.h"
 #include "sensor_msgs/LaserScan.h"
+#include "emcl/Landmark.h"
+#include "emcl/DetectObjects.h"
 
 namespace emcl {
 
@@ -28,13 +30,14 @@ public:
 
 	std::vector<Particle> particles_;
 	double alpha_;
-
+	void loadLandmark(const std::string filename);
 	void sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv);
 	void motionUpdate(double x, double y, double t);
 
 	void initialize(double x, double y, double t);
 
 	void setScan(const sensor_msgs::LaserScan::ConstPtr &msg);
+	void setDetectObjects(const emcl::DetectObjects::ConstPtr& msg);
 	void meanPose(double &x_mean, double &y_mean, double &t_mean,
 			double &x_var, double &y_var, double &t_var,
 			double &xy_cov, double &yt_cov, double &tx_cov);
@@ -48,6 +51,7 @@ protected:
 	Pose *prev_odom_;
 
 	Scan scan_;
+	Landmark landmark_;
 	int processed_seq_;
 
 	double normalizeAngle(double t);

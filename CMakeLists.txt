@@ -50,6 +50,6 @@ add_dependencies(mcl_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_
 add_dependencies(emcl_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(emcl2_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(mcl_node Mcl Particle Pose Scan OdomModel LikelihoodFieldMap ${catkin_LIBRARIES})
+target_link_libraries(mcl_node Mcl Particle Pose Scan OdomModel LikelihoodFieldMap Landmark yaml-cpp ${catkin_LIBRARIES})
 target_link_libraries(emcl_node Mcl ExpResetMcl Particle Pose Scan OdomModel LikelihoodFieldMap Landmark yaml-cpp ${catkin_LIBRARIES})
-target_link_libraries(emcl2_node Mcl ExpResetMcl2 Particle Pose Scan OdomModel LikelihoodFieldMap ${catkin_LIBRARIES})
+target_link_libraries(emcl2_node Mcl ExpResetMcl2 Particle Pose Scan OdomModel LikelihoodFieldMap Landmark yaml-cpp ${catkin_LIBRARIES})
