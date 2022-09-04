@@ -29,8 +29,9 @@ bool Landmark::readMapFile(const std::string filename)
             obj.name = landmark["name"].as<std::string>();
             struct pos v = landmark["pose"].as<struct pos>();
             obj.x = v.x;
-            obj.x = v.y;
+            obj.y = v.y;
             map_.push_back(obj);
+            //std::cout << obj.name << ", " << obj.x << ", " << obj.y << std::endl;
         }
     }
 }
