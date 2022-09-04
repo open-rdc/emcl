@@ -60,6 +60,7 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, Landmark &landm
 {
 	double ret = likelihood(map, scan);
 	ret *= likelihood(landmark);
+	// std::cout << "likelihood: " << ret << std::endl;
 	return ret;
 }
 
