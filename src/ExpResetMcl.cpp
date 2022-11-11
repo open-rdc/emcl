@@ -60,7 +60,7 @@ void ExpResetMcl::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, b
 		return;
 
 	for(auto &p : particles_)
-		p.w_ *= p.likelihood(map_.get(), scan);
+		p.w_ *= p.likelihood(map_.get(), scan, landmark_);
 
 	alpha_ = normalizeBelief()/valid_beams;
 	//alpha_ = nonPenetrationRate( particles_.size() / 20, map_.get(), scan); //new version
@@ -69,7 +69,7 @@ void ExpResetMcl::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, b
 		ROS_INFO("RESET");
 		expansionReset();
 		for(auto &p : particles_)
-			p.w_ *= p.likelihood(map_.get(), scan);
+			p.w_ *= p.likelihood(map_.get(), scan, landmark_);
 	}
 
 	if(normalizeBelief() > 0.000001)

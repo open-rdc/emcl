@@ -37,6 +37,33 @@ double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan)
 	return ans;
 }
 
+double Particle::likelihood(Landmark &landmark)
+{
+	double ret = 1.0;
+	for(auto &detect_obj:landmark.detect_objects_) {
+		for(auto &obj:landmark.map_) {
+			double dx = obj.x - p_.x_;
+			double dy = obj.y - p_.y_;
+			double angle = std::atan2(dy, dx);
+			if (detect_obj.name == obj.name) {
+				double dt = detect_obj.yaw + p_.t_ - angle;
+				while(dt >  M_PI) dt -= M_PI*2;
+				while(dt < -M_PI) dt += M_PI*2;
+				ret *= (std::cos(dt) + 1.0);
+			}
+		}
+	}
+	return ret;
+}
+
+double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan, Landmark &landmark)
+{
+	double ret = likelihood(map, scan);
+	ret *= likelihood(landmark);
+	// std::cout << "likelihood: " << ret << std::endl;
+	return ret;
+}
+
 bool Particle::wallConflict(LikelihoodFieldMap *map, Scan &scan, double threshold, bool replace)
 {
 	uint16_t t = p_.get16bitRepresentation();

@@ -18,6 +18,8 @@ EMclNode::EMclNode() : private_nh_("~")
 	initPF();
 
 	private_nh_.param("odom_freq", odom_freq_, 20);
+	private_nh_.param("landmark_filename", landmark_filename_, std::string(""));
+	initLandmark(landmark_filename_);
 
 	init_request_ = false;
 	simple_reset_request_ = false;
@@ -34,6 +36,7 @@ void EMclNode::initCommunication(void)
 	alpha_pub_ = nh_.advertise<std_msgs::Float32>("alpha", 2, true);
 	laser_scan_sub_ = nh_.subscribe("scan", 2, &EMclNode::cbScan, this);
 	initial_pose_sub_ = nh_.subscribe("initialpose", 2, &EMclNode::initialPoseReceived, this);
+	detect_objects_sub_ = nh_.subscribe("detectobjects", 2, &EMclNode::detectObjectsReceived, this);
 
 	global_loc_srv_ = nh_.advertiseService("global_localization", &EMclNode::cbSimpleReset, this);
 
@@ -105,6 +108,11 @@ std::shared_ptr<LikelihoodFieldMap> EMclNode::initMap(void)
 	return std::shared_ptr<LikelihoodFieldMap>(new LikelihoodFieldMap(resp.map, likelihood_range));
 }
 
+bool EMclNode::initLandmark(std::string filename)
+{
+		pf_->loadLandmark(filename);
+}
+
 void EMclNode::cbScan(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
     scan_frame_id_ = msg->header.frame_id;
@@ -117,6 +125,11 @@ void EMclNode::initialPoseReceived(const geometry_msgs::PoseWithCovarianceStampe
 	init_x_ = msg->pose.pose.position.x;
 	init_y_ = msg->pose.pose.position.y;
 	init_t_ = tf2::getYaw(msg->pose.pose.orientation);
+}
+
+void EMclNode::detectObjectsReceived(const emcl::DetectObjects::ConstPtr& msg)
+{
+	pf_->setDetectObjects(msg);
 }
 
 void EMclNode::loop(void)

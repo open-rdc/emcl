@@ -41,6 +41,10 @@ Mcl::~Mcl()
 	delete prev_odom_;
 }
 
+void Mcl::loadLandmark(std::string filename) {
+	landmark_.readMapFile(filename);
+}
+
 void Mcl::resampling(void)
 {
 	std::vector<double> accum;
@@ -107,7 +111,7 @@ void Mcl::sensorUpdate(double lidar_x, double lidar_y, double lidar_t, bool inv)
 		return;
 
 	for(auto &p : particles_)
-		p.w_ *= p.likelihood(map_.get(), scan);
+		p.w_ *= p.likelihood(map_.get(), scan, landmark_);
 
 	/*
 	alpha_ = normalizeBelief()/valid_beams;
@@ -225,6 +229,18 @@ void Mcl::setScan(const sensor_msgs::LaserScan::ConstPtr &msg)
 	scan_.angle_increment_ = msg->angle_increment;
 	scan_.range_min_= msg->range_min;
 	scan_.range_max_= msg->range_max;
+}
+
+void Mcl::setDetectObjects(const emcl::DetectObjects::ConstPtr& msg)
+{
+	landmark_.detect_objects_.clear();
+	for(auto &detect_object:msg->detectobjects) {
+		Landmark::detect_object obj;
+		obj.name = detect_object.name;
+		obj.yaw = detect_object.yaw;
+		obj.distance = detect_object.distance;
+		landmark_.detect_objects_.push_back(obj);
+	}
 }
 
 double Mcl::normalizeBelief(void)

@@ -6,6 +6,7 @@
 
 #include <ros/ros.h>
 #include "emcl/ExpResetMcl.h"
+#include "emcl/Landmark.h"
 
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
@@ -15,6 +16,8 @@
 #include "sensor_msgs/LaserScan.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
 #include "std_srvs/Empty.h"
+#include "emcl/DetectObject.h"
+#include "emcl/DetectObjects.h"
 
 namespace emcl {
 
@@ -28,6 +31,7 @@ public:
 	int getOdomFreq(void);
 private:
 	std::shared_ptr<ExpResetMcl> pf_;
+	std::shared_ptr<emcl::Landmark> landmark_;
 	ros::NodeHandle nh_;
 	ros::NodeHandle private_nh_;
 
@@ -36,6 +40,7 @@ private:
 	ros::Publisher alpha_pub_;
 	ros::Subscriber laser_scan_sub_;
 	ros::Subscriber initial_pose_sub_;
+	ros::Subscriber detect_objects_sub_;
 
 	ros::ServiceServer global_loc_srv_;
 
@@ -55,6 +60,7 @@ private:
 	bool init_request_;
 	bool simple_reset_request_;
 	double init_x_, init_y_, init_t_;
+	std::string landmark_filename_;
 
 	void publishPose(double x, double y, double t,
 			double x_dev, double y_dev, double t_dev,
@@ -68,11 +74,13 @@ private:
 	void initCommunication(void);
 	void initPF(void);
 	std::shared_ptr<LikelihoodFieldMap> initMap(void);
+	bool initLandmark(std::string filename);
 	std::shared_ptr<OdomModel> initOdometry(void);
 
 	void cbScan(const sensor_msgs::LaserScan::ConstPtr &msg);
 	bool cbSimpleReset(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
 	void initialPoseReceived(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
+	void detectObjectsReceived(const emcl::DetectObjects::ConstPtr& msg);
 };
 
 }
